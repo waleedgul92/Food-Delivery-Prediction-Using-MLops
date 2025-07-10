@@ -1,0 +1,259 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+    - path: data/raw/dataset.csv
+      hash: md5
+      md5: 20f163e082754da11f7eab4acdd7ddde
+      size: 44200
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: b55ae198751005f3f625e65627f8983b
+      size: 1788
+    params:
+      params.yaml:
+        base.random_state: 42
+        data_split.test_size: 0.2
+    outs:
+    - path: data/interim
+      hash: md5
+      md5: 2fa80f79c9d29d7ae67ddf4915ae668f.dir
+      size: 45332
+      nfiles: 2
+  data_processing:
+    cmd: python src/data_process.py
+    deps:
+    - path: data/interim
+      hash: md5
+      md5: 2fa80f79c9d29d7ae67ddf4915ae668f.dir
+      size: 45332
+      nfiles: 2
+    - path: src/data_process.py
+      hash: md5
+      md5: 371d2b991f0f0c21b91638bf7ce1b401
+      size: 4753
+    params:
+      params.yaml:
+        base.random_state: 42
+        data_process.contamination: 0.1
+    outs:
+    - path: artifacts/categorical_imputer.pkl
+      hash: md5
+      md5: 2b719505e91ce061eacb9cb9d2613044
+      size: 1055
+    - path: artifacts/numerical_imputer.pkl
+      hash: md5
+      md5: 54246bae6d819d4308eac766ad49b8a0
+      size: 12593
+    - path: data/processed
+      hash: md5
+      md5: a60c896a2585b2e1e1839cbcb302f204.dir
+      size: 42704
+      nfiles: 2
+    - path: src/visualization
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+  feature_engineering:
+    cmd: python src/feature_engineering.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: a60c896a2585b2e1e1839cbcb302f204.dir
+      size: 42704
+      nfiles: 2
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: cce0fced662b1b5de0315c388025ddbd
+      size: 3567
+    params:
+      params.yaml:
+        base.target_col: Delivery_Time_Minutes
+    outs:
+    - path: artifacts/encoded_columns.json
+      hash: md5
+      md5: 54953da91d17f9aae064b339cef0eaa8
+      size: 303
+    - path: artifacts/min_max_scaler.pkl
+      hash: md5
+      md5: 32a801c6139ea47c65a9ba6c97e433a4
+      size: 1151
+    - path: data/featured
+      hash: md5
+      md5: fcfcbc6fae8c7fbdb641fb7189c32592.dir
+      size: 73278
+      nfiles: 2
+  train_model:
+    cmd: python src/train_data.py
+    deps:
+    - path: data/featured
+      hash: md5
+      md5: fcfcbc6fae8c7fbdb641fb7189c32592.dir
+      size: 73278
+      nfiles: 2
+    - path: src/train_data.py
+      hash: md5
+      md5: 4cb49a5829e6e2842f5f2a53a028cbe2
+      size: 5133
+    params:
+      params.yaml:
+        base:
+          random_state: 42
+          target_col: Delivery_Time_Minutes
+        baseline_params:
+          RandomForestRegressor:
+            n_estimators: 100
+            n_jobs: -1
+          XGBRegressor:
+            objective: reg:squarederror
+            n_jobs: -1
+        train:
+          n_trials: 30
+          cv_folds: 3
+          model_name: artifacts/best_delivery_time_model.joblib
+          hpo:
+            GradientBoostingRegressor:
+              n_estimators:
+                type: int
+                args:
+                - 50
+                - 500
+              max_depth:
+                type: int
+                args:
+                - 3
+                - 12
+              learning_rate:
+                type: float
+                args:
+                - 0.01
+                - 0.3
+                log: true
+              min_samples_split:
+                type: int
+                args:
+                - 2
+                - 20
+              min_samples_leaf:
+                type: int
+                args:
+                - 1
+                - 20
+              subsample:
+                type: float
+                args:
+                - 0.6
+                - 1.0
+            RandomForestRegressor:
+              n_estimators:
+                type: int
+                args:
+                - 50
+                - 500
+              max_depth:
+                type: int
+                args:
+                - 3
+                - 30
+              min_samples_split:
+                type: int
+                args:
+                - 2
+                - 20
+              min_samples_leaf:
+                type: int
+                args:
+                - 1
+                - 20
+              max_features:
+                type: categorical
+                args:
+                - sqrt
+                - log2
+            XGBRegressor:
+              n_estimators:
+                type: int
+                args:
+                - 50
+                - 500
+              max_depth:
+                type: int
+                args:
+                - 3
+                - 12
+              learning_rate:
+                type: float
+                args:
+                - 0.01
+                - 0.3
+                log: true
+              subsample:
+                type: float
+                args:
+                - 0.6
+                - 1.0
+              colsample_bytree:
+                type: float
+                args:
+                - 0.6
+                - 1.0
+              gamma:
+                type: float
+                args:
+                - 0
+                - 5
+            DecisionTreeRegressor:
+              max_depth:
+                type: int
+                args:
+                - 3
+                - 30
+              min_samples_split:
+                type: int
+                args:
+                - 2
+                - 20
+              min_samples_leaf:
+                type: int
+                args:
+                - 1
+                - 20
+              criterion:
+                type: categorical
+                args:
+                - squared_error
+                - friedman_mse
+                - absolute_error
+    outs:
+    - path: artifacts/best_delivery_time_model.joblib
+      hash: md5
+      md5: 8b856f0459907d304bc0da41e7ce7f17
+      size: 1369530
+  evaluate_model:
+    cmd: python src/test_data.py
+    deps:
+    - path: artifacts/best_delivery_time_model.joblib
+      hash: md5
+      md5: 8b856f0459907d304bc0da41e7ce7f17
+      size: 1369530
+    - path: data/featured
+      hash: md5
+      md5: fcfcbc6fae8c7fbdb641fb7189c32592.dir
+      size: 73278
+      nfiles: 2
+    - path: src/test_data.py
+      hash: md5
+      md5: c7c6eb924c2945d1ed339d1964f931de
+      size: 1736
+    params:
+      params.yaml:
+        base.target_col: Delivery_Time_Minutes
+        evaluate.predictions_csv: data/results/predictions.csv
+        train.model_name: artifacts/best_delivery_time_model.joblib
+    outs:
+    - path: data/results/predictions.csv
+      hash: md5
+      md5: ed253ac04159bad8897207b51da06a3b
+      size: 4850

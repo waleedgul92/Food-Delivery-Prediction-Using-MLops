@@ -1,0 +1,78 @@
+base:
+  random_state: 42
+  target_col: "Delivery_Time_Minutes"
+
+data_split:
+  test_size: 0.2
+
+data_process:
+  contamination: 0.1
+
+train:
+  n_trials: 30
+  cv_folds: 3
+  model_name: "artifacts/best_delivery_time_model.joblib"
+  
+  # --- Hyperparameter Optimization Search Space ---
+  hpo:
+    GradientBoostingRegressor:
+      n_estimators: { type: 'int', args: [50, 500] }
+      max_depth: { type: 'int', args: [3, 12] }
+      learning_rate: { type: 'float', args: [0.01, 0.3], log: True }
+      min_samples_split: { type: 'int', args: [2, 20] }
+      min_samples_leaf: { type: 'int', args: [1, 20] }
+      subsample: { type: 'float', args: [0.6, 1.0] }
+    
+    RandomForestRegressor:
+      n_estimators: { type: 'int', args: [50, 500] }
+      max_depth: { type: 'int', args: [3, 30] }
+      min_samples_split: { type: 'int', args: [2, 20] }
+      min_samples_leaf: { type: 'int', args: [1, 20] }
+      max_features: { type: 'categorical', args: ['sqrt', 'log2'] }
+      
+    XGBRegressor:
+      n_estimators: { type: 'int', args: [50, 500] }
+      max_depth: { type: 'int', args: [3, 12] }
+      learning_rate: { type: 'float', args: [0.01, 0.3], log: True }
+      subsample: { type: 'float', args: [0.6, 1.0] }
+      colsample_bytree: { type: 'float', args: [0.6, 1.0] }
+      gamma: { type: 'float', args: [0, 5] }
+      
+    DecisionTreeRegressor:
+      max_depth: { type: 'int', args: [3, 30] }
+      min_samples_split: { type: 'int', args: [2, 20] }
+      min_samples_leaf: { type: 'int', args: [1, 20] }
+      criterion: { type: 'categorical', args: ['squared_error', 'friedman_mse', 'absolute_error'] }
+
+# Baseline parameters for initial model evaluation
+baseline_params:
+  RandomForestRegressor:
+    n_estimators: 100
+    n_jobs: -1
+  XGBRegressor:
+    objective: 'reg:squarederror'
+    n_jobs: -1
+
+# Directory and file paths
+data:
+  raw_dataset: "data/raw/dataset.csv"
+  interim_dir: "data/interim"
+  processed_dir: "data/processed"
+  featured_dir: "data/featured"
+  viz_dir: "src/visualization"
+  artifacts_dir: "artifacts"
+  train_csv: "train.csv"
+  test_csv: "test.csv"
+  train_processed_csv: "train_processed.csv"
+  test_processed_csv: "test_processed.csv"
+  train_engineered_csv: "train_engineered.csv"
+  test_engineered_csv: "test_engineered.csv"
+  
+artifacts:
+  cat_imputer: "categorical_imputer.pkl"
+  num_imputer: "numerical_imputer.pkl"
+  scaler: "min_max_scaler.pkl"
+  encoded_columns: "encoded_columns.json"
+
+evaluate:
+  predictions_csv: "data/results/predictions.csv"

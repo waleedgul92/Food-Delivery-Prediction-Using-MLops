@@ -1,0 +1,62 @@
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+      - src/data_ingestion.py
+      - data/raw/dataset.csv
+    params:
+      - base.random_state
+      - data_split.test_size
+    outs:
+      - data/interim
+
+  data_processing:
+    cmd: python src/data_process.py
+    deps:
+      - src/data_process.py
+      - data/interim
+    params:
+      - base.random_state
+      - data_process.contamination
+    outs:
+      - data/processed
+      - src/visualization
+      - artifacts/categorical_imputer.pkl
+      - artifacts/numerical_imputer.pkl
+
+  feature_engineering:
+    cmd: python src/feature_engineering.py
+    deps:
+      - src/feature_engineering.py
+      - data/processed
+    params:
+      - base.target_col
+    outs:
+      - data/featured
+      - artifacts/min_max_scaler.pkl
+      - artifacts/encoded_columns.json
+
+  train_model:
+    cmd: python src/train_data.py
+    deps:
+      - src/train_data.py
+      - data/featured
+    params:
+      - base
+      - train
+      - baseline_params
+    outs:
+      - artifacts/best_delivery_time_model.joblib # Corrected path
+
+  evaluate_model:
+    cmd: python src/test_data.py
+    deps:
+      - src/test_data.py
+      - artifacts/best_delivery_time_model.joblib # Corrected path
+      - data/featured
+    params:
+      - base.target_col
+      - train.model_name
+      - evaluate.predictions_csv
+    outs:
+      - data/results/predictions.csv
