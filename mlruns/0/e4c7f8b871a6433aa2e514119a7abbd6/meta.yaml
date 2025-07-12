@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/0/e4c7f8b871a6433aa2e514119a7abbd6/artifacts
+deleted_time: 1752217539476
+end_time: 1752217061280
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: deleted
+run_id: e4c7f8b871a6433aa2e514119a7abbd6
+run_name: baseline_GradientBoostingRegressor
+run_uuid: e4c7f8b871a6433aa2e514119a7abbd6
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752217060805
+status: 3
+tags: []
+user_id: hwale

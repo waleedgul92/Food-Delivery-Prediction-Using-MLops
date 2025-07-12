@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/0/c942d64f1d9c4531a269687b31fe1f86/artifacts
+deleted_time: 1752218396510
+end_time: 1752218147662
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: deleted
+run_id: c942d64f1d9c4531a269687b31fe1f86
+run_name: final_model_evaluation
+run_uuid: c942d64f1d9c4531a269687b31fe1f86
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752218147202
+status: 4
+tags: []
+user_id: hwale

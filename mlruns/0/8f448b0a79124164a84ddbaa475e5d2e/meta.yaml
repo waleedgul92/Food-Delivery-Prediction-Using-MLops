@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/8f448b0a79124164a84ddbaa475e5d2e/artifacts
+end_time: 1752217699130
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 8f448b0a79124164a84ddbaa475e5d2e
+run_name: baseline_XGBRegressor
+run_uuid: 8f448b0a79124164a84ddbaa475e5d2e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752217698735
+status: 3
+tags: []
+user_id: hwale

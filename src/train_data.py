@@ -10,6 +10,9 @@ from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 import xgboost as xgb
+import mlflow
+import mlflow.sklearn
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
 def setup_logging():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -48,7 +51,7 @@ def train_and_evaluate(model, X_train, y_train, X_test, y_test, logger):
     r2 = r2_score(y_test, preds)
     mse = mean_squared_error(y_test, preds)
     logger.info(f"--- {model_name} --- R2: {r2:.4f} | MSE: {mse:.4f}")
-    return r2
+    return r2, mse
 
 def objective(trial, X_train, y_train, model_name, params):
     hpo_params = params['train']['hpo'][model_name]
@@ -76,29 +79,42 @@ if __name__ == "__main__":
         X_train, y_train, X_test, y_test = load_featured_data(params, logger)
         models = get_models(params)
         
-        logger.info("--- Starting Baseline Model Evaluation ---")
-        scores = {name: train_and_evaluate(model, X_train, y_train, X_test, y_test, logger) for name, model in models.items()}
-        
-        best_model_name = max(scores, key=scores.get)
-        logger.info(f"\n--- Best Baseline Model (by R2): {best_model_name} ---")
-        
-        logger.info(f"\n--- Performing Hyperparameter Tuning for {best_model_name} based on MSE ---")
-        study = optuna.create_study(direction='maximize', sampler=optuna.samplers.TPESampler(seed=params['base']['random_state']))
-        study.optimize(lambda trial: objective(trial, X_train, y_train, best_model_name, params), n_trials=params['train']['n_trials'])
-        
-        logger.info(f"Best hyperparameters: {study.best_params}")
-        
-        logger.info("\n--- Training Final Model with Best Hyperparameters ---")
-        final_model_class = models[best_model_name].__class__
-        final_model = final_model_class(**study.best_params, random_state=params['base']['random_state'])
-        train_and_evaluate(final_model, X_train, y_train, X_test, y_test, logger)
-        
-        model_path = params['train']['model_name']
-        model_dir = os.path.dirname(model_path)
-        if model_dir:
-            os.makedirs(model_dir, exist_ok=True)
-        joblib.dump(final_model, model_path)
-        logger.info(f"Best model saved to '{model_path}'")
-        
+        with mlflow.start_run(run_name="model_training_and_evaluation"):
+            logger.info("--- Starting Baseline Model Evaluation ---")
+            scores = {}
+            for name, model in models.items():
+                with mlflow.start_run(run_name=f"baseline_{name}", nested=True):
+                    r2, mse = train_and_evaluate(model, X_train, y_train, X_test, y_test, logger)
+                    scores[name] = r2
+                    mlflow.log_params(model.get_params())
+                    mlflow.log_metric("r2_score", r2)
+                    mlflow.log_metric("mse", mse)
+            
+            best_model_name = max(scores, key=scores.get)
+            mlflow.set_tag("best_baseline_model", best_model_name)
+            logger.info(f"\n--- Best Baseline Model (by R2): {best_model_name} ---")
+            
+            logger.info(f"\n--- Performing Hyperparameter Tuning for {best_model_name} based on MSE ---")
+            study = optuna.create_study(direction='maximize', sampler=optuna.samplers.TPESampler(seed=params['base']['random_state']))
+            study.optimize(lambda trial: objective(trial, X_train, y_train, best_model_name, params), n_trials=params['train']['n_trials'])
+            
+            mlflow.log_params(study.best_params)
+            mlflow.log_metric("best_hpo_mse", study.best_value)
+
+            logger.info(f"Best hyperparameters: {study.best_params}")
+            
+            logger.info("\n--- Training Final Model with Best Hyperparameters ---")
+            final_model_class = models[best_model_name].__class__
+            final_model = final_model_class(**study.best_params, random_state=params['base']['random_state'])
+            final_r2, final_mse = train_and_evaluate(final_model, X_train, y_train, X_test, y_test, logger)
+
+            mlflow.log_metric("final_r2_score", final_r2)
+            mlflow.log_metric("final_mse", final_mse)
+            
+            model_path = params['train']['model_name']
+            model_dir = os.path.dirname(model_path)
+            
+            mlflow.sklearn.log_model(final_model, "best_model") 
+            
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=True)

@@ -21,8 +21,8 @@ stages:
     outs:
       - data/processed
       - src/visualization
-      - artifacts/categorical_imputer.pkl
-      - artifacts/numerical_imputer.pkl
+      # REMOVED: artifacts/categorical_imputer.pkl
+      # REMOVED: artifacts/numerical_imputer.pkl
 
   feature_engineering:
     cmd: python src/feature_engineering.py
@@ -33,8 +33,8 @@ stages:
       - base.target_col
     outs:
       - data/featured
-      - artifacts/min_max_scaler.pkl
-      - artifacts/encoded_columns.json
+      # REMOVED: artifacts/min_max_scaler.pkl
+      # REMOVED: artifacts/encoded_columns.json
 
   train_model:
     cmd: python src/train_data.py
@@ -45,14 +45,13 @@ stages:
       - base
       - train
       - baseline_params
-    outs:
-      - artifacts/best_delivery_time_model.joblib # Corrected path
+    # REMOVED: artifacts/best_delivery_time_model.joblib
 
   evaluate_model:
     cmd: python src/test_data.py
     deps:
       - src/test_data.py
-      - artifacts/best_delivery_time_model.joblib # Corrected path
+      # The dependency is on the training stage completing, not the file itself
       - data/featured
     params:
       - base.target_col
@@ -60,3 +59,5 @@ stages:
       - evaluate.predictions_csv
     outs:
       - data/results/predictions.csv
+
+# The rest of the params.yaml content remains the same...

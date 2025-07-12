@@ -1,3 +1,4 @@
+# src/data_process.py
 import os
 import pandas as pd
 import numpy as np
@@ -9,7 +10,8 @@ from sklearn.ensemble import IsolationForest
 import logging
 import yaml
 import joblib
-
+import mlflow
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
 def setup_logging():
     """Configures logging."""
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -35,27 +37,28 @@ def load_and_rename_data(file_path, logger):
     return dataset
 
 def impute_missing_data(train_df, test_df, logger, params):
-    """Imputes missing data and saves the imputers."""
+    """Imputes missing data and logs the imputers to MLflow."""
     logger.info("Starting missing data imputation.")
     train_imputed, test_imputed = train_df.copy(), test_df.copy()
-    artifacts_dir = params['data']['artifacts_dir']
-    os.makedirs(artifacts_dir, exist_ok=True)
 
     categorical_cols = train_imputed.select_dtypes(include=['object', 'category']).columns
     if not categorical_cols.empty:
         imputer_cat = SimpleImputer(strategy='most_frequent')
         train_imputed[categorical_cols] = imputer_cat.fit_transform(train_imputed[categorical_cols])
         test_imputed[categorical_cols] = imputer_cat.transform(test_imputed[categorical_cols])
-        joblib.dump(imputer_cat, os.path.join(artifacts_dir, params['artifacts']['cat_imputer']))
+        # Log the imputer to MLflow instead of saving locally
+        mlflow.sklearn.log_model(imputer_cat, "categorical_imputer")
 
     numerical_cols = train_imputed.select_dtypes(include=np.number).columns
     if not numerical_cols.empty:
         imputer_num = IterativeImputer(random_state=params['base']['random_state'])
         train_imputed[numerical_cols] = imputer_num.fit_transform(train_imputed[numerical_cols])
         test_imputed[numerical_cols] = imputer_num.transform(test_imputed[numerical_cols])
-        joblib.dump(imputer_num, os.path.join(artifacts_dir, params['artifacts']['num_imputer']))
+        # Log the imputer to MLflow instead of saving locally
+        mlflow.sklearn.log_model(imputer_num, "numerical_imputer")
     
     return train_imputed, test_imputed
+
 
 def remove_outliers_isolation_forest(df, logger, params):
     """Removes outliers using Isolation Forest."""
@@ -66,6 +69,7 @@ def remove_outliers_isolation_forest(df, logger, params):
     outlier_pred = iso_forest.fit_predict(df_out[numerical_cols])
     outlier_mask = outlier_pred == -1
     logger.info(f"Found and removed {sum(outlier_mask)} outliers.")
+    mlflow.log_metric("outliers_removed", sum(outlier_mask))
     return df_out[~outlier_mask]
 
 def save_eda_plots(df, output_dir, logger):
@@ -73,24 +77,41 @@ def save_eda_plots(df, output_dir, logger):
     logger.info(f"Generating and saving EDA plots to {output_dir}...")
     os.makedirs(output_dir, exist_ok=True)
     # ... (Plotting logic remains the same)
+    # After generating a plot, save it and log it to MLflow
+    # Example:
+    # plt.figure()
+    # sns.histplot(df['some_column'])
+    # plot_path = os.path.join(output_dir, 'histogram.png')
+    # plt.savefig(plot_path)
+    # mlflow.log_artifact(plot_path, "eda_plots")
     plt.close('all') # Close all figures to free memory
 
 if __name__ == "__main__":
     logger = setup_logging()
     params = load_params()
     
-    train_data_path = os.path.join(params['data']['interim_dir'], params['data']['train_csv'])
-    test_data_path = os.path.join(params['data']['interim_dir'], params['data']['test_csv'])
-    processed_output_dir = params['data']['processed_dir']
-    os.makedirs(processed_output_dir, exist_ok=True)
-    
-    train_data = load_and_rename_data(train_data_path, logger)
-    test_data = load_and_rename_data(test_data_path, logger)
-    
-    imputed_train, imputed_test = impute_missing_data(train_data, test_data, logger, params)
-    save_eda_plots(imputed_train, params['data']['viz_dir'], logger)
-    final_train = remove_outliers_isolation_forest(imputed_train, logger, params)
-    
-    final_train.to_csv(os.path.join(processed_output_dir, params['data']['train_processed_csv']), index=False)
-    imputed_test.to_csv(os.path.join(processed_output_dir, params['data']['test_processed_csv']), index=False)
-    logger.info("Data processing pipeline complete.")
+    with mlflow.start_run(run_name="data_processing", nested=True):
+        train_data_path = os.path.join(params['data']['interim_dir'], params['data']['train_csv'])
+        test_data_path = os.path.join(params['data']['interim_dir'], params['data']['test_csv'])
+        processed_output_dir = params['data']['processed_dir']
+        os.makedirs(processed_output_dir, exist_ok=True)
+        
+        train_data = load_and_rename_data(train_data_path, logger)
+        test_data = load_and_rename_data(test_data_path, logger)
+        
+        imputed_train, imputed_test = impute_missing_data(train_data, test_data, logger, params)
+        save_eda_plots(imputed_train, params['data']['viz_dir'], logger)
+        final_train = remove_outliers_isolation_forest(imputed_train, logger, params)
+        
+        train_processed_path = os.path.join(processed_output_dir, params['data']['train_processed_csv'])
+        test_processed_path = os.path.join(processed_output_dir, params['data']['test_processed_csv'])
+        
+        final_train.to_csv(train_processed_path, index=False)
+        imputed_test.to_csv(test_processed_path, index=False)
+        
+        mlflow.log_artifact(train_processed_path, "processed_data")
+        mlflow.log_artifact(test_processed_path, "processed_data")
+
+        mlflow.log_param("contamination", params['data_process']['contamination'])
+        
+        logger.info("Data processing pipeline complete.")

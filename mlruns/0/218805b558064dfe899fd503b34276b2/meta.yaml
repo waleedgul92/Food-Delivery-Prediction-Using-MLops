@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/218805b558064dfe899fd503b34276b2/artifacts
+end_time: 1752217697934
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 218805b558064dfe899fd503b34276b2
+run_name: baseline_RandomForestRegressor
+run_uuid: 218805b558064dfe899fd503b34276b2
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752217697178
+status: 3
+tags: []
+user_id: hwale
