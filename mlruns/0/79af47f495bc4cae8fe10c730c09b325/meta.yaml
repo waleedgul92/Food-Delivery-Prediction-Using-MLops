@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/79af47f495bc4cae8fe10c730c09b325/artifacts
+end_time: 1752488118200
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 79af47f495bc4cae8fe10c730c09b325
+run_name: baseline_DecisionTreeRegressor
+run_uuid: 79af47f495bc4cae8fe10c730c09b325
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752488118028
+status: 3
+tags: []
+user_id: hwale

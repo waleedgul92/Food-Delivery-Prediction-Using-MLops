@@ -5,7 +5,12 @@ from sklearn.model_selection import train_test_split
 import logging
 import yaml
 import mlflow
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+import dagshub
+dagshub.init(repo_owner='hwaleed0035', repo_name='Food-Delivery-Prediction-Using-MLops', mlflow=True)
+mlflow.set_tracking_uri("https://dagshub.com/hwaleed0035/Food-Delivery-Prediction-Using-MLops.mlflow")
+
+mlflow.set_experiment("Food Delivery Prediction Model Training")
+
 def setup_logging():
     """Configures logging."""
     log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

@@ -1,146 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delivery Time Predictor</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Link to your external stylesheet -->
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Delivery Time Predictor</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 class="title">Delivery Time Predictor</h1>
+      <p class="subtitle">Enter the details below to estimate the delivery time.</p>
 
-    <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-4xl">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">Delivery Time Predictor</h1>
-            <p class="text-slate-400 mt-2">Enter the details below to estimate the delivery time.</p>
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="distance">Distance (km)</label>
+          <div class="slider-container">
+            <input type="range" id="distance" min="1" max="50" value="10" class="slider"/>
+            <span class="slider-value" id="distance-value">10 km</span>
+          </div>
         </div>
 
-        <form id="prediction-form">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Left Column -->
-                <div class="space-y-6">
-                    <!-- Core Metrics -->
-                    <div>
-                        <label for="distance" class="block text-lg font-medium text-slate-300">Distance (km)</label>
-                        <div class="flex items-center gap-4 mt-2">
-                            <input type="range" id="distance" name="Distance" min="1" max="50" value="10" class="w-full">
-                            <span id="distance-value" class="font-semibold text-blue-400 w-12 text-center">10 km</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="prep_time" class="block text-lg font-medium text-slate-300">Preparation Time (min)</label>
-                         <div class="flex items-center gap-4 mt-2">
-                            <input type="range" id="prep_time" name="Preparation_Time" min="5" max="60" value="20" class="w-full">
-                            <span id="prep-time-value" class="font-semibold text-blue-400 w-12 text-center">20 min</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="courier_exp" class="block text-lg font-medium text-slate-300">Courier Experience (yrs)</label>
-                        <div class="flex items-center gap-4 mt-2">
-                            <input type="range" id="courier_exp" name="Courier_Experience" min="0" max="10" value="2" step="1" class="w-full">
-                            <span id="courier-exp-value" class="font-semibold text-blue-400 w-12 text-center">2 yrs</span>
-                        </div>
-                    </div>
+        <div class="input-group">
+          <label>Traffic Level</label>
+          <div class="button-group">
+            <button class="btn-option active" data-group="traffic" data-value="low">Low</button>
+            <button class="btn-option" data-group="traffic" data-value="medium">Medium</button>
+            <button class="btn-option" data-group="traffic" data-value="high">High</button>
+          </div>
+        </div>
 
-                    <!-- Weather Conditions -->
-                    <div>
-                        <label class="block text-lg font-medium text-slate-300 mb-2">Weather Conditions</label>
-                        <div class="flex flex-wrap gap-3 checkbox-group">
-                            <input type="checkbox" id="weather_foggy" name="Weather_Foggy" value="1"><label for="weather_foggy">Foggy</label>
-                            <input type="checkbox" id="weather_rainy" name="Weather_Rainy" value="1"><label for="weather_rainy">Rainy</label>
-                            <input type="checkbox" id="weather_snowy" name="Weather_Snowy" value="1"><label for="weather_snowy">Snowy</label>
-                            <input type="checkbox" id="weather_windy" name="Weather_Windy" value="1"><label for="weather_windy">Windy</label>
-                        </div>
-                    </div>
-                </div>
+        <div class="input-group">
+          <label for="preparation">Preparation Time (min)</label>
+          <div class="slider-container">
+            <input type="range" id="preparation" min="5" max="60" value="20" class="slider"/>
+            <span class="slider-value" id="preparation-value">20 min</span>
+          </div>
+        </div>
 
-                <!-- Right Column -->
-                <div class="space-y-6">
-                    <!-- Traffic Level -->
-                    <div>
-                        <label class="block text-lg font-medium text-slate-300 mb-2">Traffic Level</label>
-                        <div class="flex flex-wrap gap-3 radio-group">
-                            <input type="radio" id="traffic_low" name="Traffic_Level" value="Low" checked><label for="traffic_low">Low</label>
-                            <input type="radio" id="traffic_medium" name="Traffic_Level" value="Medium"><label for="traffic_medium">Medium</label>
-                            <input type="radio" id="traffic_high" name="Traffic_Level" value="High"><label for="traffic_high">High</label>
-                        </div>
-                    </div>
-                    
-                    <!-- Time of Day -->
-                    <div>
-                        <label class="block text-lg font-medium text-slate-300 mb-2">Time of Day</label>
-                        <div class="flex flex-wrap gap-3 radio-group">
-                            <input type="radio" id="time_morning" name="Time_of_Day" value="Morning"><label for="time_morning">Morning</label>
-                            <input type="radio" id="time_evening" name="Time_of_Day" value="Evening" checked><label for="time_evening">Evening</label>
-                            <input type="radio" id="time_night" name="Time_of_Day" value="Night"><label for="time_night">Night</label>
-                        </div>
-                    </div>
+        <div class="input-group">
+          <label>Time of Day</label>
+          <div class="button-group">
+            <button class="btn-option" data-group="time" data-value="morning">Morning</button>
+            <button class="btn-option active" data-group="time" data-value="evening">Evening</button>
+            <button class="btn-option" data-group="time" data-value="night">Night</button>
+          </div>
+        </div>
 
-                    <!-- Vehicle Type -->
-                    <div>
-                        <label class="block text-lg font-medium text-slate-300 mb-2">Vehicle Type</label>
-                        <div class="flex flex-wrap gap-3 radio-group">
-                            <input type="radio" id="vehicle_scooter" name="Vehicle_Type" value="Scooter" checked><label for="vehicle_scooter">Scooter</label>
-                            <input type="radio" id="vehicle_car" name="Vehicle_Type" value="Car"><label for="vehicle_car">Car</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="input-group">
+          <label for="experience">Courier Experience (yrs)</label>
+          <div class="slider-container">
+            <input type="range" id="experience" min="0" max="10" value="2" class="slider"/>
+            <span class="slider-value" id="experience-value">2 yrs</span>
+          </div>
+        </div>
 
-            <!-- Prediction Button and Result -->
-            <div class="mt-10 pt-8 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-6">
-                <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300/50">
-                    Predict Delivery Time
-                </button>
-                <div class="bg-slate-900/70 border border-slate-700 rounded-lg p-4 text-center w-full sm:w-auto">
-                    <p class="text-sm text-slate-400">Estimated Time</p>
-                    <p id="prediction-result" class="text-3xl font-bold text-teal-300">-- min</p>
-                </div>
-            </div>
-        </form>
+        <div class="input-group">
+          <label>Vehicle Type</label>
+          <div class="button-group">
+            <button class="btn-option active" data-group="vehicle" data-value="scooter">Scooter</button>
+            <button class="btn-option" data-group="vehicle" data-value="car">Car</button>
+          </div>
+        </div>
+
+        <div class="input-group full-width">
+          <label>Weather Conditions</label>
+          <div class="weather-group">
+            <button class="btn-weather" data-weather="foggy">Foggy</button>
+            <button class="btn-weather" data-weather="rainy">Rainy</button>
+            <button class="btn-weather" data-weather="snowy">Snowy</button>
+            <button class="btn-weather" data-weather="windy">Windy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-section">
+        <button class="predict-btn">Predict Delivery Time</button>
+        <div class="result-box">
+          <div class="result-label">Estimated Time</div>
+          <div class="result-value" id="result-value">-- min</div>
+        </div>
+      </div>
+
+      <div id="feedback-section" class="feedback-section hidden">
+        <p class="feedback-title">How accurate was this prediction?</p>
+        <div class="feedback-input-group">
+          <label for="actual-time">Enter Actual Delivery Time (min):</label>
+          <input type="number" id="actual-time" class="feedback-input" placeholder="e.g., 35"/>
+        </div>
+        <button id="submit-feedback-btn" class="feedback-btn">Submit Feedback</button>
+        <p id="feedback-thanks" class="feedback-thanks hidden">Thank you for your feedback!</p>
+      </div>
     </div>
-
-    <script>
-        // JavaScript to update slider value displays
-        const distanceSlider = document.getElementById('distance');
-        const distanceValue = document.getElementById('distance-value');
-        distanceSlider.oninput = () => {
-            distanceValue.textContent = `${distanceSlider.value} km`;
-        };
-
-        const prepTimeSlider = document.getElementById('prep_time');
-        const prepTimeValue = document.getElementById('prep-time-value');
-        prepTimeSlider.oninput = () => {
-            prepTimeValue.textContent = `${prepTimeSlider.value} min`;
-        };
-
-        const courierExpSlider = document.getElementById('courier_exp');
-        const courierExpValue = document.getElementById('courier-exp-value');
-        courierExpSlider.oninput = () => {
-            courierExpValue.textContent = `${courierExpSlider.value} yrs`;
-        };
-
-        // Dummy prediction logic for demonstration
-        document.getElementById('prediction-form').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent form submission
-            
-            // Simulate a loading state
-            const resultElement = document.getElementById('prediction-result');
-            resultElement.textContent = '...';
-
-            // Simulate a network request and show a random prediction
-            setTimeout(() => {
-                const randomTime = (Math.random() * 30 + 15).toFixed(0); // Random time between 15 and 45
-                resultElement.textContent = `${randomTime} min`;
-            }, 1000);
-        });
-    </script>
+  </div>
+  <script src="script.js"></script>
+</body>
 
 </body>
 </html>

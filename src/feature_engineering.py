@@ -8,8 +8,12 @@ import yaml
 import joblib
 import json
 import mlflow
+import dagshub
+dagshub.init(repo_owner='hwaleed0035', repo_name='Food-Delivery-Prediction-Using-MLops', mlflow=True)
+mlflow.set_tracking_uri("https://dagshub.com/hwaleed0035/Food-Delivery-Prediction-Using-MLops.mlflow")
+mlflow.set_experiment("Food Delivery Prediction Model Training")
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+
 def setup_logging():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         handlers=[logging.FileHandler('log_data/feature_engineering.log'), logging.StreamHandler()])

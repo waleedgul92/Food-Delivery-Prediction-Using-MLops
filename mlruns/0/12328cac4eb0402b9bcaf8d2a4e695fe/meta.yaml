@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/0/12328cac4eb0402b9bcaf8d2a4e695fe/artifacts
+end_time: 1752488247312
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 12328cac4eb0402b9bcaf8d2a4e695fe
+run_name: model_training_and_evaluation
+run_uuid: 12328cac4eb0402b9bcaf8d2a4e695fe
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752488117907
+status: 4
+tags: []
+user_id: hwale
