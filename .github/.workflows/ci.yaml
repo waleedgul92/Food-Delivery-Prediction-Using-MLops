@@ -1,16 +1,13 @@
 name: Python Application CI
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  push
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
+    steps: 
     - name: Checkout repository
       uses: actions/checkout@v2
 
