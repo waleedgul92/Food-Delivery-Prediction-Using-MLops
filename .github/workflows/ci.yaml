@@ -1,33 +1,94 @@
 name: Python Application CI
 
 on:
-  push
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: "3.9"
 
 jobs:
-  build:
+  build-and-train:
     runs-on: ubuntu-latest
-
-    steps: 
+    
+    steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for DVC
 
-    - name: Set up Python 3.9
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.9"
-        cache: 'pip' # Cache dependencies to speed up future runs
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
 
-    - name: Install dependencies
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git
+
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install dvc dvc[s3] dagshub mlflow
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f FAST_API_DIR/requirements.txt ]; then pip install -r FAST_API_DIR/requirements.txt; fi
 
-
-    - name : Run tests
+    - name: Configure DVC remote (if using DagsHub storage)
       run: |
-        if [ -f FAST_API_DIR/manage.py ]; then
-          cd FAST_API_DIR
-          python manage.py test
+        dvc remote modify origin --local auth basic }}
+        dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}
+      continue-on-error: true
+
+    - name: Pull DVC data
+      run: |
+        dvc pull
+      continue-on-error: true
+
+    - name: Run DVC reproduction
+      run: |
+        dvc repro
+      env:
+        DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_KEY }}
+
+    - name: Check for model changes
+      id: check_changes
+      run: |
+        if git diff --quiet HEAD -- '*.pkl' '*.joblib' '*.h5' '*.pt' '*.pth' 'models/' || [ ! -d "models" ]; then
+          echo "changes=false" >> $GITHUB_OUTPUT
         else
-          echo "No manage.py found, skipping tests."
+          echo "changes=true" >> $GITHUB_OUTPUT
         fi
+      continue-on-error: true
+
+    - name: Push DVC changes
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
+        dvc add models/ || true
+        dvc push || true
+      continue-on-error: true
+
+    - name: Commit and push changes
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git diff --staged --quiet || git commit -m "Update models from CI pipeline [skip ci]"
+        git push || true
+      continue-on-error: true
+
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: training-artifacts
+        path: |
+          models/
+          metrics.json
+          metrics.yaml
+          dvc.lock
+        retention-days: 30
