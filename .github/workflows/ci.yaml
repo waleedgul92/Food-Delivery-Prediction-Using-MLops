@@ -40,7 +40,7 @@ jobs:
     - name: Configure DVC remote (if using DagsHub storage)
       run: |
         dvc remote modify origin --local auth basic }}
-        dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}
+        dvc remote modify origin --local password ${{ secrets.DAGSHUB_KEY }}
       continue-on-error: true
 
     - name: Pull DVC data
