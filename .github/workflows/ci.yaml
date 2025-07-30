@@ -48,4 +48,3 @@ jobs:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
       run: |
         dvc repro
-. 
