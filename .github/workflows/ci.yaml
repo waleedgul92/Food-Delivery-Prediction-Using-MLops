@@ -43,7 +43,11 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name : run-dvc-pipeline
+    - name: Install DVC
+      run: |
+        pip install dvc[s3] # or dvc[gdrive] etc. depending on your remote storage
+
+    - name: Run DVC pipeline
       env:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
       run: |
