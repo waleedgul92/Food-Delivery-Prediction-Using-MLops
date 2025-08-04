@@ -7,10 +7,22 @@ import mlflow
 from mlflow.tracking import MlflowClient
 import dagshub
 
-# --- DagsHub and MLflow Setup ---
-dagshub.init(repo_owner='hwaleed0035', repo_name='Food-Delivery-Prediction-Using-MLops', mlflow=True)
-mlflow.set_tracking_uri("https://dagshub.com/hwaleed0035/Food-Delivery-Prediction-Using-MLops.mlflow")
-mlflow.set_experiment("Food Delivery Prediction Model Training")
+dagshub_token = os.getenv("DAGSHUB_PAT")
+if not dagshub_token:
+    raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
+
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+# Initialize DagsHub repository for MLflow tracking
+
+dagshub_url = "https://dagshub.com"
+repo_owner = "hwaleed0035"
+repo_name = "Food-Delivery-Prediction-Using-MLops"
+# Set up MLflow tracking URI
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+
+
 
 
 def setup_logging():
