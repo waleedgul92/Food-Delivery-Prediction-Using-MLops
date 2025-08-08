@@ -23,7 +23,7 @@ billiard==4.2.1
 binaryornot==0.4.4
 blinker==1.9.0
 boto3==1.40.5
-botocore
+botocore== 0.61.0
 cachetools==5.5.1
 celery==5.4.0
 certifi==2025.1.31
