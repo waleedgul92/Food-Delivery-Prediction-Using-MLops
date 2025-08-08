@@ -128,7 +128,7 @@ pipx==1.7.1
 platformdirs==4.3.6
 prompt_toolkit==3.0.50
 propcache==0.2.1
-protobuf==5.29.3
+protobuf==5.29.2
 psutil==7.0.0
 pyarrow==18.1.0
 pyasn1==0.6.1
@@ -144,7 +144,6 @@ pyparsing==3.2.1
 python-dateutil==2.9.0.post0
 python-slugify==8.0.4
 pytz==2025.1
-# pywin32==308
 PyYAML==6.0.2
 requests==2.32.3
 requests-toolbelt==1.0.0
