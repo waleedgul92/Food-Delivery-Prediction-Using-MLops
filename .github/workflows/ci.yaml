@@ -1,8 +1,8 @@
-name: Python Application CI
+name: Python Application CI with AWS
 
 on:
   push:
-    branches: [ main, develop, master ]
+    branches: [ main, develop ,master]
   pull_request:
     branches: [ main ]
 
@@ -19,13 +19,6 @@ jobs:
       with:
         fetch-depth: 0  # Fetch full history for DVC
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.WS_ACCESS_KEY_ID }}  # Note: assuming this should be AWS_ACCESS_KEY_ID
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -35,7 +28,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git awscli
+        sudo apt-get install -y git
 
     - name: Cache pip dependencies
       uses: actions/cache@v4
@@ -43,50 +36,28 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-
+           ${{ runner.os }}-pip-
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Install DVC
+    - name: Install DVC and AWS S3
       run: |
-        pip install dvc[s3]
+        # Install DVC with S3 support for remote storage operations
+        pip install dvc[s3] 
 
-    - name: Verify AWS connection
-      run: |
-        aws sts get-caller-identity
-        echo "AWS CLI configured successfully"
-
-    - name: Download data/models from S3 (optional - if not using DVC)
-      run: |
-        # Example: Download specific files from S3
-        # aws s3 cp s3://your-bucket/data/ ./data/ --recursive
-        # aws s3 cp s3://your-bucket/models/ ./models/ --recursive
-        echo "Add your S3 download commands here if needed"
-
-    - name: Configure DVC remote with AWS credentials
-      run: |
-        # Set up DVC remote if needed
-        # dvc remote modify myremote access_key_id ${{ secrets.WS_ACCESS_KEY_ID }}
-        # dvc remote modify myremote secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        echo "DVC remote configured"
-
-    - name: Pull data with DVC
+    - name: Pull DVC data and run pipeline
       env:
+        # Securely access DAGsHub Personal Access Token from GitHub Secrets
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.WS_ACCESS_KEY_ID }}
+        # Securely access AWS credentials and region from GitHub Secrets
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
+        # Pull data and models managed by DVC from remote storage
         dvc pull
-
-    - name: Run DVC pipeline
-      env:
-        DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.WS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      run: |
+        # Run the DVC pipeline, which includes data processing and model training
         dvc repro
