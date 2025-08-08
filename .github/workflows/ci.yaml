@@ -2,7 +2,7 @@ name: Python Application CI
 
 on:
   push:
-    branches: [ main, develop ,master]
+    branches: [ main, develop, master ]
   pull_request:
     branches: [ main ]
 
@@ -19,6 +19,13 @@ jobs:
       with:
         fetch-depth: 0  # Fetch full history for DVC
 
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.WS_ACCESS_KEY_ID }}  # Note: assuming this should be AWS_ACCESS_KEY_ID
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -28,7 +35,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git
+        sudo apt-get install -y git awscli
 
     - name: Cache pip dependencies
       uses: actions/cache@v4
@@ -45,10 +52,41 @@ jobs:
 
     - name: Install DVC
       run: |
-        pip install dvc[s3] # or dvc[gdrive] etc. depending on your remote storage
+        pip install dvc[s3]
+
+    - name: Verify AWS connection
+      run: |
+        aws sts get-caller-identity
+        echo "AWS CLI configured successfully"
+
+    - name: Download data/models from S3 (optional - if not using DVC)
+      run: |
+        # Example: Download specific files from S3
+        # aws s3 cp s3://your-bucket/data/ ./data/ --recursive
+        # aws s3 cp s3://your-bucket/models/ ./models/ --recursive
+        echo "Add your S3 download commands here if needed"
+
+    - name: Configure DVC remote with AWS credentials
+      run: |
+        # Set up DVC remote if needed
+        # dvc remote modify myremote access_key_id ${{ secrets.WS_ACCESS_KEY_ID }}
+        # dvc remote modify myremote secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        echo "DVC remote configured"
+
+    - name: Pull data with DVC
+      env:
+        DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.WS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      run: |
+        dvc pull
 
     - name: Run DVC pipeline
       env:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.WS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
         dvc repro
