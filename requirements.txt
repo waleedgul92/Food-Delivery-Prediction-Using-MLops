@@ -1,4 +1,4 @@
-aiobotocore==2.23.2
+aiobotocore==2.26.0  # <--- CHANGE THIS LINE
 aiohappyeyeballs==2.4.6
 aiohttp==3.11.12
 aiohttp-retry==2.9.1
@@ -22,7 +22,7 @@ billiard==4.2.1
 binaryornot==0.4.4
 blinker==1.9.0
 boto3==1.40.5
-botocore==1.39.8
+botocore==1.40.5     # <--- CHANGE THIS LINE (to match awscli's requirement)
 cachetools==5.5.1
 celery==5.4.0
 certifi==2025.1.31
@@ -128,7 +128,7 @@ pipx==1.7.1
 platformdirs==4.3.6
 prompt_toolkit==3.0.50
 propcache==0.2.1
-protobuf==5.29.2
+protobuf==5.29.3
 psutil==7.0.0
 pyarrow==18.1.0
 pyasn1==0.6.1
@@ -144,6 +144,7 @@ pyparsing==3.2.1
 python-dateutil==2.9.0.post0
 python-slugify==8.0.4
 pytz==2025.1
+pywin32==308
 PyYAML==6.0.2
 requests==2.32.3
 requests-toolbelt==1.0.0
