@@ -97,3 +97,18 @@ models/
 
 artifacts/
 src/*.env
+
+
+
+# .gitignor
+data/.gitkeep # If you use .gitkeep to keep empty directories
+data/**/*.dvc # <-- Add this line to un-ignore DVC files
+
+
+/data/*
+!/data/*.dvc
+!/data/**/*.dvc
+
+# Or more specifically:
+/data/raw/*
+!/data/raw/*.dvc
