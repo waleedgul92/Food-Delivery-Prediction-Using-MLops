@@ -14,7 +14,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    # 1. Checkout repository (with full history for DVC)
+    # 1. Checkout repository
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
@@ -25,50 +25,48 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+        cache: 'pip' # This correctly handles pip caching
 
-    # 3. Install system dependencies
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y git
-
-    # 4. Cache pip dependencies
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    # 5. Install Python dependencies
+    # 3. Install Python dependencies
     - name: Install Python dependencies
+      shell: pwsh # Use PowerShell, the default for windows-latest
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # Use PowerShell syntax for checking if file exists
+        if (Test-Path -Path requirements.txt) {
+          pip install -r requirements.txt
+        } else {
+          Write-Host "requirements.txt not found, skipping."
+        }
 
-    # 6. Install DVC with S3 support
+    # 4. Install DVC with S3 support
     - name: Install DVC
+      shell: pwsh
       run: |
         pip install --upgrade "dvc[s3]"
 
-    # 7. Configure AWS credentials for S3 access
+    # 5. Configure AWS credentials for S3 access
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.WS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+        # Credentials are now available as env vars for subsequent steps
 
-    # 8. Pull data from S3 via DVC
-    - name: Pull data from S3 with DVC
+    # 6. Pull other DVC-tracked data (if any)
+    - name: Pull DVC data
+      shell: pwsh
       run: |
         dvc pull
+        # This will skip raw_dataset (since it's not a dep)
+        # but will pull any other models/data
 
-    # 9. Run DVC pipeline
+    # 7. Run DVC pipeline
     - name: Run DVC pipeline
+      shell: pwsh
       env:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
+        # AWS keys are already set in the environment from Step 5
       run: |
         dvc repro
