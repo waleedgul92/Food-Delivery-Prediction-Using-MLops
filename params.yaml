@@ -67,7 +67,8 @@ data:
   test_processed_csv: "test_processed.csv"
   train_engineered_csv: "train_engineered.csv"
   test_engineered_csv: "test_engineered.csv"
-  
+  s3_bucket: my-food-delivery-models # Or your correct bucket name
+  s3_key: files/dataset.csv
 artifacts:
   cat_imputer: "categorical_imputer.pkl"
   num_imputer: "numerical_imputer.pkl"
