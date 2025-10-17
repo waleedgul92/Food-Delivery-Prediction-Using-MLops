@@ -55,12 +55,12 @@ jobs:
         # Credentials are now available as env vars for subsequent steps
 
     # 6. Pull other DVC-tracked data (if any)
-    - name: Pull DVC data
-      shell: pwsh
-      run: |
-        dvc pull
-        # This will skip raw_dataset (since it's not a dep)
-        # but will pull any other models/data
+    # - name: Pull DVC data
+    #   shell: pwsh
+    #   run: |
+    #     dvc pull
+    #     # This will skip raw_dataset (since it's not a dep)
+    #     # but will pull any other models/data
 
     # 7. Run DVC pipeline
     - name: Run DVC pipeline
