@@ -134,7 +134,7 @@ opentelemetry-sdk==1.30.0
 opentelemetry-semantic-conventions==0.51b0
 optuna==4.4.0
 orjson==3.10.15
-packaging==25.0
+packaging
 pandas==2.2.3
 parso==0.8.5
 pathspec==0.12.1
