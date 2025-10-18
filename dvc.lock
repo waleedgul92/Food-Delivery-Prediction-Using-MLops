@@ -3,17 +3,18 @@ stages:
   data_ingestion:
     cmd: python src/data_ingestion.py
     deps:
-    - path: data/raw/dataset.csv
-      hash: md5
-      md5: 20f163e082754da11f7eab4acdd7ddde
-      size: 44200
     - path: src/data_ingestion.py
       hash: md5
-      md5: 97dc348541c8039f49cb373a46a811eb
-      size: 2537
+      md5: e1d4aeb278b9f0f5ba3ea568d07af341
+      size: 5173
     params:
       params.yaml:
         base.random_state: 42
+        data.interim_dir: data/interim
+        data.s3_bucket: my-food-delivery-models
+        data.s3_key: files/dataset.csv
+        data.test_csv: test.csv
+        data.train_csv: train.csv
         data_split.test_size: 0.2
     outs:
     - path: data/interim
@@ -29,13 +30,18 @@ stages:
       md5: 2fa80f79c9d29d7ae67ddf4915ae668f.dir
       size: 45332
       nfiles: 2
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: e1d4aeb278b9f0f5ba3ea568d07af341
+      size: 5173
     - path: src/data_process.py
       hash: md5
-      md5: c1a8ce7c428acfc502056321a913e9ee
-      size: 5883
+      md5: 59976a20ba36645b08bb31d9de9ac24e
+      size: 7650
     params:
       params.yaml:
         base.random_state: 42
+        data.processed_dir: data/processed
         data_process.contamination: 0.1
     outs:
     - path: data/processed
@@ -45,9 +51,9 @@ stages:
       nfiles: 2
     - path: src/visualization
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 263caedf74ae52443aedbbd345176d8e.dir
+      size: 94351
+      nfiles: 4
   feature_engineering:
     cmd: python src/feature_engineering.py
     deps:
@@ -56,14 +62,33 @@ stages:
       md5: a60c896a2585b2e1e1839cbcb302f204.dir
       size: 42704
       nfiles: 2
+    - path: src/data_process.py
+      hash: md5
+      md5: 59976a20ba36645b08bb31d9de9ac24e
+      size: 7650
     - path: src/feature_engineering.py
       hash: md5
-      md5: 689d8f05130baa3049d71aaf301339f8
-      size: 3946
+      md5: b7aa024f04af5466a6d527f87d3108af
+      size: 9707
     params:
       params.yaml:
+        artifacts:
+          cat_imputer: categorical_imputer.pkl
+          num_imputer: numerical_imputer.pkl
+          scaler: min_max_scaler.pkl
+          encoded_columns: encoded_columns.json
         base.target_col: Delivery_Time_Minutes
+        data.artifacts_dir: artifacts
+        data.featured_dir: data/featured
     outs:
+    - path: artifacts/encoded_columns.json
+      hash: md5
+      md5: c66b64bf7a56d4919f95dbb89e6f0435
+      size: 474
+    - path: artifacts/min_max_scaler.pkl
+      hash: md5
+      md5: 32a801c6139ea47c65a9ba6c97e433a4
+      size: 1151
     - path: data/featured
       hash: md5
       md5: fcfcbc6fae8c7fbdb641fb7189c32592.dir
@@ -72,15 +97,27 @@ stages:
   train_model:
     cmd: python src/train_data.py
     deps:
+    - path: artifacts/encoded_columns.json
+      hash: md5
+      md5: c66b64bf7a56d4919f95dbb89e6f0435
+      size: 474
+    - path: artifacts/min_max_scaler.pkl
+      hash: md5
+      md5: 32a801c6139ea47c65a9ba6c97e433a4
+      size: 1151
     - path: data/featured
       hash: md5
       md5: fcfcbc6fae8c7fbdb641fb7189c32592.dir
       size: 73278
       nfiles: 2
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: b7aa024f04af5466a6d527f87d3108af
+      size: 9707
     - path: src/train_data.py
       hash: md5
-      md5: 71557bd17428a87aeae1d374ab21f58a
-      size: 8357
+      md5: 449415e92052c2651e4289d9a556a432
+      size: 11841
     params:
       params.yaml:
         base:
@@ -93,6 +130,7 @@ stages:
           XGBRegressor:
             objective: reg:squarederror
             n_jobs: -1
+        data.artifacts_dir: artifacts
         train:
           n_trials: 30
           cv_folds: 3
@@ -210,25 +248,59 @@ stages:
                 - squared_error
                 - friedman_mse
                 - absolute_error
+    outs:
+    - path: artifacts/best_delivery_time_model.joblib
+      hash: md5
+      md5: 8b856f0459907d304bc0da41e7ce7f17
+      size: 1369530
+    - path: artifacts/training_metrics.json
+      hash: md5
+      md5: 3ec38d6479bc31f992f6c4be7b07fc2f
+      size: 450
   evaluate_model:
     cmd: python src/test_data.py
     deps:
+    - path: artifacts/best_delivery_time_model.joblib
+      hash: md5
+      md5: 8b856f0459907d304bc0da41e7ce7f17
+      size: 1369530
+    - path: artifacts/encoded_columns.json
+      hash: md5
+      md5: c66b64bf7a56d4919f95dbb89e6f0435
+      size: 474
+    - path: artifacts/min_max_scaler.pkl
+      hash: md5
+      md5: 32a801c6139ea47c65a9ba6c97e433a4
+      size: 1151
     - path: data/featured
       hash: md5
       md5: fcfcbc6fae8c7fbdb641fb7189c32592.dir
       size: 73278
       nfiles: 2
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: b7aa024f04af5466a6d527f87d3108af
+      size: 9707
     - path: src/test_data.py
       hash: md5
-      md5: 439a9b9a3ed92792da68a6b96cfc15bc
-      size: 3967
+      md5: e35471ec904f93c5d3afef2398023604
+      size: 11253
+    - path: src/train_data.py
+      hash: md5
+      md5: 449415e92052c2651e4289d9a556a432
+      size: 11841
     params:
       params.yaml:
         base.target_col: Delivery_Time_Minutes
+        data.s3_bucket: my-food-delivery-models
         evaluate.predictions_csv: data/results/predictions.csv
         train.model_name: artifacts/best_delivery_time_model.joblib
     outs:
+    - path: data/results/evaluation_metrics.json
+      hash: md5
+      md5: f43faed6aaf18acd2e3213305a9c3a13
+      size: 220
     - path: data/results/predictions.csv
       hash: md5
-      md5: ed253ac04159bad8897207b51da06a3b
-      size: 4850
+      md5: 0803dc97a7fe92205cc617e1af7e1e95
+      size: 12383

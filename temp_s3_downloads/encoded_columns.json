@@ -1,0 +1,19 @@
+{
+    "encoded_columns": [
+        "Distance",
+        "Preparation_Time",
+        "Courier_Experience",
+        "Delivery_Time_Minutes",
+        "Weather_Foggy",
+        "Weather_Rainy",
+        "Weather_Snowy",
+        "Weather_Windy",
+        "Traffic_Level_Low",
+        "Traffic_Level_Medium",
+        "Time_of_Day_Evening",
+        "Time_of_Day_Morning",
+        "Time_of_Day_Night",
+        "Vehicle_Type_Car",
+        "Vehicle_Type_Scooter"
+    ]
+}

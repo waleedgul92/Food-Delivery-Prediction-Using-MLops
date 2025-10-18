@@ -3,59 +3,96 @@ stages:
     cmd: python src/data_ingestion.py
     deps:
       - src/data_ingestion.py
-      # REMOVED: data/raw/dataset.csv is no longer a dep
     params:
       - base.random_state
       - data_split.test_size
-      - data.s3_bucket      # ADDED: Script now depends on this param
-      - data.s3_key         # ADDED: Script now depends on this param
-      - data.interim_dir    # ADDED: Script needs this for output path
-      - data.train_csv      # ADDED: Script needs this for output path
-      - data.test_csv       # ADDED: Script needs this for output path
+      - data.s3_bucket
+      - data.s3_key
+      - data.interim_dir
+      - data.train_csv
+      - data.test_csv
     outs:
-      - data/interim
+      - data/interim:
+          cache: true
 
   data_processing:
     cmd: python src/data_process.py
     deps:
       - src/data_process.py
+      - src/data_ingestion.py
       - data/interim
     params:
       - base.random_state
       - data_process.contamination
+      - data.processed_dir
     outs:
-      - data/processed
-      - src/visualization
+      - data/processed:
+          cache: true
+      - src/visualization:
+          cache: false
 
   feature_engineering:
     cmd: python src/feature_engineering.py
     deps:
       - src/feature_engineering.py
+      - src/data_process.py
       - data/processed
     params:
       - base.target_col
+      - data.featured_dir
+      - data.artifacts_dir
+      - artifacts
     outs:
-      - data/featured
+      - data/featured:
+          cache: true
+          desc: "Engineered features for model training"
+      - artifacts/min_max_scaler.pkl:
+          cache: true
+          desc: "MinMaxScaler for numerical features"
+      - artifacts/encoded_columns.json:
+          cache: true
+          desc: "Encoded categorical columns mapping"
 
   train_model:
     cmd: python src/train_data.py
     deps:
       - src/train_data.py
+      - src/feature_engineering.py
       - data/featured
+      - artifacts/min_max_scaler.pkl
+      - artifacts/encoded_columns.json
     params:
       - base
       - train
       - baseline_params
-    # No .joblib output file here, as it's tracked by MLflow
+      - data.artifacts_dir
+    outs:
+      - artifacts/best_delivery_time_model.joblib:
+          cache: true
+          desc: "Final trained food delivery time prediction model"
+    metrics:
+      - artifacts/training_metrics.json:
+          cache: false
 
   evaluate_model:
     cmd: python src/test_data.py
     deps:
       - src/test_data.py
+      - src/train_data.py
+      - src/feature_engineering.py
       - data/featured
+      - artifacts/best_delivery_time_model.joblib
+      - artifacts/min_max_scaler.pkl
+      - artifacts/encoded_columns.json
     params:
       - base.target_col
       - train.model_name
       - evaluate.predictions_csv
+      - data.s3_bucket
     outs:
-      - data/results/predictions.csv
+      - data/results/predictions.csv:
+          cache: false
+          desc: "Model predictions on test set"
+    metrics:
+      - data/results/evaluation_metrics.json:
+          cache: false
