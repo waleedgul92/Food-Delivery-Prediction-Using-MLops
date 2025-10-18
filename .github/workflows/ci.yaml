@@ -67,6 +67,7 @@ jobs:
       shell: pwsh
       env:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
+        PYTHONIOENCODING: "utf-8" # Fix for UnicodeEncodeError on Windows
         # AWS keys are already set in the environment from Step 5
       run: |
         dvc repro
