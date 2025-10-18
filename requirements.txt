@@ -1,5 +1,6 @@
 aiobotocore==2.23.2
 aiohappyeyeballs==2.4.6
+python-dotenv
 aiohttp==3.11.12
 aiohttp-retry==2.9.1
 aioitertools==0.12.0
