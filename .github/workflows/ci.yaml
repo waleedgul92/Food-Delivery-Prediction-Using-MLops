@@ -7,12 +7,11 @@ on:
     branches: [ main ]
 
 env:
-  # Changed to 3.10 to match your API's Dockerfile
   PYTHON_VERSION: "3.10" 
 
 jobs:
   build-and-train:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest 
     
     steps:
     - name: Checkout repository
@@ -27,17 +26,15 @@ jobs:
         cache: 'pip' 
 
     - name: Install Python dependencies
-      shell: pwsh 
       run: |
         python -m pip install --upgrade pip
-        if (Test-Path -Path requirements.txt) {
+        if [ -f requirements.txt ]; then
           pip install -r requirements.txt
-        } else {
-          Write-Host "requirements.txt not found, skipping."
-        }
+        else
+          echo "requirements.txt not found, skipping."
+        fi
 
     - name: Install DVC
-      shell: pwsh
       run: |
         pip install --upgrade "dvc[s3]"
 
@@ -49,18 +46,13 @@ jobs:
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
     - name: Run DVC pipeline
-      shell: pwsh
       env:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
-        PYTHONIOENCODING: "utf-8" 
       run: |
         dvc repro
 
-  # --- NEW JOB TO BUILD AND PUSH DOCKER IMAGES ---
   build-and-push-images:
-    # This job will only run after 'build-and-train' succeeds
     needs: build-and-train
-    # Use ubuntu-latest for Docker actions, it's generally faster
     runs-on: ubuntu-latest
 
     steps:
@@ -68,7 +60,6 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
-      # We need AWS credentials again to log in to ECR
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -76,29 +67,22 @@ jobs:
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
     - name: Log in to Amazon ECR
-      # This action securely logs Docker into your ECR registry
       uses: aws-actions/amazon-ecr-login@v2
       id: login-ecr 
 
     - name: Build Docker images with Compose
-      # This runs the 'docker compose build' command
-      # It will build 'my-fastapi-app' and 'my-ui-app'
       run: docker compose build
 
-    # - name: Tag and Push images to ECR
-    #   env:
-    #     # Get the registry URL from the login step output
-    #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-    #     # Get the short Git SHA to use as a unique image tag
-    #     IMAGE_TAG: ${{ github.sha }}
-    #   run: |
-    #     # Tag both images with the unique Git SHA and 'latest'
-    #     docker tag my-fastapi-app $ECR_REGISTRY/my-fastapi-app:$IMAGE_TAG
-    #     docker tag my-fastapi-app $ECR_REGISTRY/my-fastapi-app:latest
+    - name: Tag and Push images to ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.ref_name }}
+      run: |
+        docker tag my-fastapi-app $ECR_REGISTRY/my-fastapi-app:$IMAGE_TAG
+        docker tag my-fastapi-app $ECR_REGISTRY/my-fastapi-app:latest
         
-    #     docker tag my-ui-app $ECR_REGISTRY/my-ui-app:$IMAGE_TAG
-    #     docker tag my-ui-app $ECR_REGISTRY/my-ui-app:latest
+        docker tag my-ui-app $ECR_REGISTRY/my-ui-app:$IMAGE_TAG
+        docker tag my-ui-app $ECR_REGISTRY/my-ui-app:latest
 
-    #     # Push both 'latest' and SHA-tagged images to ECR
-    #     docker push $ECR_REGISTRY/my-fastapi-app --all-tags
-    #     docker push $ECR_REGISTRY/my-ui-app --all-tags
+        docker push $ECR_REGISTRY/my-fastapi-app --all-tags
+        docker push $ECR_REGISTRY/my-ui-app --all-tags

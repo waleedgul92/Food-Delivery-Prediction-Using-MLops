@@ -1,5 +1,4 @@
-version: '3.8'
-
+# The 'version' tag is removed
 services:
   # 1. The Backend API Service (FastAPI)
   api:
@@ -15,6 +14,7 @@ services:
       - ./log_data:/app/log_data
     environment:
       - DAGSHUB_PAT=${DAGSHUB_PAT}
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
 
   # 2. The Frontend UI Service (Nginx)
   ui:
