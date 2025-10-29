@@ -7,67 +7,98 @@ on:
     branches: [ main ]
 
 env:
-  PYTHON_VERSION: "3.11"
+  # Changed to 3.10 to match your API's Dockerfile
+  PYTHON_VERSION: "3.10" 
 
 jobs:
   build-and-train:
     runs-on: windows-latest
     
     steps:
-    # 1. Checkout repository
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    # 2. Set up Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip' # This correctly handles pip caching
+        cache: 'pip' 
 
-    # 3. Install Python dependencies
     - name: Install Python dependencies
-      shell: pwsh # Use PowerShell, the default for windows-latest
+      shell: pwsh 
       run: |
         python -m pip install --upgrade pip
-        # Use PowerShell syntax for checking if file exists
         if (Test-Path -Path requirements.txt) {
           pip install -r requirements.txt
         } else {
           Write-Host "requirements.txt not found, skipping."
         }
 
-    # 4. Install DVC with S3 support
     - name: Install DVC
       shell: pwsh
       run: |
         pip install --upgrade "dvc[s3]"
 
-    # 5. Configure AWS credentials for S3 access
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-        # Credentials are now available as env vars for subsequent steps
 
-    # 6. Pull other DVC-tracked data (if any)
-    # - name: Pull DVC data
-    #   shell: pwsh
-    #   run: |
-    #     dvc pull
-    #     # This will skip raw_dataset (since it's not a dep)
-    #     # but will pull any other models/data
-
-    # 7. Run DVC pipeline
     - name: Run DVC pipeline
       shell: pwsh
       env:
         DAGSHUB_PAT: ${{ secrets.DAGSHUB_KEY }}
-        PYTHONIOENCODING: "utf-8" # Fix for UnicodeEncodeError on Windows
-        # AWS keys are already set in the environment from Step 5
+        PYTHONIOENCODING: "utf-8" 
       run: |
         dvc repro
+
+  # --- NEW JOB TO BUILD AND PUSH DOCKER IMAGES ---
+  build-and-push-images:
+    # This job will only run after 'build-and-train' succeeds
+    needs: build-and-train
+    # Use ubuntu-latest for Docker actions, it's generally faster
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      # We need AWS credentials again to log in to ECR
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    - name: Log in to Amazon ECR
+      # This action securely logs Docker into your ECR registry
+      uses: aws-actions/amazon-ecr-login@v2
+      id: login-ecr 
+
+    - name: Build Docker images with Compose
+      # This runs the 'docker compose build' command
+      # It will build 'my-fastapi-app' and 'my-ui-app'
+      run: docker compose build
+
+    # - name: Tag and Push images to ECR
+    #   env:
+    #     # Get the registry URL from the login step output
+    #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+    #     # Get the short Git SHA to use as a unique image tag
+    #     IMAGE_TAG: ${{ github.sha }}
+    #   run: |
+    #     # Tag both images with the unique Git SHA and 'latest'
+    #     docker tag my-fastapi-app $ECR_REGISTRY/my-fastapi-app:$IMAGE_TAG
+    #     docker tag my-fastapi-app $ECR_REGISTRY/my-fastapi-app:latest
+        
+    #     docker tag my-ui-app $ECR_REGISTRY/my-ui-app:$IMAGE_TAG
+    #     docker tag my-ui-app $ECR_REGISTRY/my-ui-app:latest
+
+    #     # Push both 'latest' and SHA-tagged images to ECR
+    #     docker push $ECR_REGISTRY/my-fastapi-app --all-tags
+    #     docker push $ECR_REGISTRY/my-ui-app --all-tags

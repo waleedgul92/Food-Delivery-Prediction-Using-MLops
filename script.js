@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
     currentPredictionData = data;
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/predict', {
+      // Use the variable from config.js
+      const response = await fetch(`${API_BASE_URL}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -107,7 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/feedback', {
+      // Use the variable from config.js
+      const response = await fetch(`${API_BASE_URL}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedbackPayload),
@@ -121,12 +123,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 🔁 Check if retrain should trigger
       try {
-        const statsRes = await fetch('http://127.0.0.1:8000/feedback-stats');
+        // Use the variable from config.js
+        const statsRes = await fetch(`${API_BASE_URL}/feedback-stats`);
         const statsData = await statsRes.json();
 
         if (statsData.total_feedback_count > 9) {
           console.log('📊 Triggering retraining...');
-          const retrainRes = await fetch('http://127.0.0.1:8000/retrain', {
+          // Use the variable from config.js
+          const retrainRes = await fetch(`${API_BASE_URL}/retrain`, {
             method: 'POST',
           });
           const retrainResult = await retrainRes.json();

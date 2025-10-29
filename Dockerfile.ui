@@ -1,0 +1,13 @@
+FROM nginx:alpine
+
+WORKDIR /usr/share/nginx/html
+
+RUN rm /usr/share/nginx/html/index.html
+RUN rm /usr/share/nginx/html/50x.html
+
+COPY main.html /usr/share/nginx/html/index.html
+COPY style.css /usr/share/nginx/html/
+COPY script.js /usr/share/nginx/html/
+COPY config.js /usr/share/nginx/html/
+
+EXPOSE 80

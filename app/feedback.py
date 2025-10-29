@@ -2,9 +2,9 @@ import os
 import logging
 from datetime import datetime
 import pandas as pd
-from app.schema import FeedbackInput
+from .schema import FeedbackInput
 import threading
-from app.model_handler import setup_logging
+from .model_handler import setup_logging
 logger = setup_logging()
 def get_feedback_stats():
     """Get statistics about received feedback"""

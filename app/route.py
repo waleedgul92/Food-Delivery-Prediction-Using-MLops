@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from app.schema import PredictionInput, FeedbackInput
-from app.model_handler import make_prediction, get_model_info, get_health_status, retrain_with_feedback, prune_model_registry
-from app.feedback import save_feedback_to_csv , get_feedback_stats
+from .schema import PredictionInput, FeedbackInput  # Change from ..app.schema
+from .model_handler import make_prediction, get_model_info, get_health_status, retrain_with_feedback, prune_model_registry
+from .feedback import save_feedback_to_csv, get_feedback_stats
 import asyncio
 import logging
 

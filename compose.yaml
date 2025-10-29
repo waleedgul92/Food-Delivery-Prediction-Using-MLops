@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # 1. The Backend API Service (FastAPI)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: my-fastapi-app
+    container_name: delivery-api-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./log_data:/app/log_data
+    environment:
+      - DAGSHUB_PAT=${DAGSHUB_PAT}
+
+  # 2. The Frontend UI Service (Nginx)
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    image: my-ui-app
+    container_name: delivery-ui-service
+    ports:
+      - "8080:80"
+    depends_on:
+      - api

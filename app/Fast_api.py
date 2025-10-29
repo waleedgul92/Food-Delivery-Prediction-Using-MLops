@@ -1,10 +1,26 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.route import router
+from .route import router
 import asyncio
-from app.model_handler import load_model_and_scaler , ensure_directories
+from .model_handler import load_model_and_scaler, ensure_directories
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Delivery Time Predictor API")
+# Use the 'lifespan' context manager instead of on_event
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This code runs on startup
+    print("Starting up...")
+    ensure_directories()
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, load_model_and_scaler)
+    print("Model loaded. Application startup complete.")
+    
+    yield
+    
+    # This code runs on shutdown (if needed)
+    print("Shutting down...")
+
+app = FastAPI(title="Delivery Time Predictor API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,17 +30,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    ensure_directories()
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, load_model_and_scaler)
-
 app.include_router(router)
-
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, workers=1)
-    

@@ -17,7 +17,7 @@ import mlflow
 import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 from dotenv import load_dotenv
-from mlflow_config import setup_mlflow_experiment
+from .mlflow_config import setup_mlflow_experiment
 
 load_dotenv()
 
