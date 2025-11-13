@@ -81,6 +81,16 @@ jobs:
       id: login-ecr 
 
 
+
+
+
+
+
+
+
+
+      
+
     - name: Build Docker images with Compose
       run: docker compose build
 
